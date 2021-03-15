@@ -1,5 +1,6 @@
-exports.TOKEN = "your bot token";
+const config = {
+    token: 'Insert-Token',
+    prefix: '-'
+}
 
-exports.PREFIX = 'YOUR PREFIX';
-
-exports.OWNER_ID = "YOUR ACC ID"
+module.exports = config;

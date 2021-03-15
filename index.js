@@ -1,63 +1,32 @@
-//====================================================================================CONSTANTS REQUIRED ON READY=============================================================================================
-const { Client, Collection } = require('discord.js');
-const { PREFIX, TOKEN } = require('./config');
-const bot = new Client({ disableMentions: 'everyone' });
+const Discord = require("discord.js");
 const fs = require("fs");
-const db = require('quick.db');
-//============================================================================================================================================================================================================
 
 
-//====================================================================================COLLECTIONS REQUIRED ON READY===========================================================================================
-bot.commands = new Collection();
-bot.aliases = new Collection();
+const client = new Discord.Client();
+const config = require("./config.js");
+client.config = config;
+client.queue = new Map()
 
-//============================================================================================================================================================================================================
-
-
-
-//============================================================================================INITIALIZING====================================================================================================
-["aliases", "commands"].forEach(x => bot[x] = new Collection());
-["console", "command", "event"].forEach(x => require(`./handler/${x}`)(bot));
-
-bot.categories = fs.readdirSync("./commands/");
-
-["command"].forEach(handler => {
-    require(`./handler/${handler}`)(bot);
+fs.readdir("./events/", (err, files) => {
+  if (err) return console.error(err);
+  files.forEach(file => {
+    const event = require(`./events/${file}`);
+    let eventName = file.split(".")[0];
+    client.on(eventName, event.bind(null, client));
+  });
 });
 
-//============================================================================================================================================================================================================
+client.commands = new Discord.Collection()
 
-
-//=========================================================================================MENTION SETTINGS===========================================================================================
-
-bot.on('message', async message => {
-
-
-    let prefix;
-        try {
-            let fetched = await db.fetch(`prefix_${message.guild.id}`);
-            if (fetched == null) {
-                prefix = PREFIX
-            } else {
-                prefix = fetched
-            }
-        
-            } catch (e) {
-            console.log(e)
-    };
-    try {
-        if (message.mentions.has(bot.user.id) && !message.content.includes("@everyone") && !message.content.includes("@here")) {
-          message.channel.send(`\nMy prefix for \`${message.guild.name}\` is \`${prefix}\` Type \`${prefix}help\` for help`);
-          }
-          
-    } catch {
-        return;
-    };
-
+fs.readdir("./commands/", (err, files) => {
+  if (err) return console.error(err);
+  files.forEach(file => {
+    if (!file.endsWith(".js")) return;
+    let props = require(`./commands/${file}`);
+    let commandName = file.split(".")[0];
+    console.log(`Attempting to load command ${commandName}`);
+    client.commands.set(commandName, props);
+  });
 });
 
-
-//============================================================================================================================================================================================================
-
-
-bot.login(TOKEN);
+client.login(config.token);
